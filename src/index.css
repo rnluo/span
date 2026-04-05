@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+@theme {
+  --color-black: #000000;
+  --color-white: #ffffff;
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "Helvetica Monospaced", "Helvetica Mono", monospace;
+}
+
+@layer base {
+  * {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  
+  body {
+    @apply bg-white text-black;
+  }
+
+  input, button, textarea, select {
+    font-family: inherit;
+  }
+}
