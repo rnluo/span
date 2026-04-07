@@ -770,7 +770,7 @@ function CenterCanvas({ blockSize }) {
         <div 
             className="absolute inset-0 pointer-events-none z-0" 
             style={{ 
-                backgroundImage: 'url(/alpine.jpg)', 
+                backgroundImage: `url(${import.meta.env.BASE_URL}alpine.jpg)`, 
                 backgroundSize: 'cover', 
                 backgroundPosition: 'center', 
                 opacity: 0.5, 
