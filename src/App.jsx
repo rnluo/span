@@ -56,7 +56,7 @@ function SidebarLeft({ blockSize }) {
             animate={{ x: 0 }}
             exit={{ x: -blockSize * 8 }}
             transition={{ duration: 0.3 }}
-            className="absolute left-0 top-0 h-full border-r-2 border-black bg-white pointer-events-auto z-10"
+            className="absolute left-0 top-0 h-full border-r-[2px] border-black bg-white pointer-events-auto z-10"
             style={{ width: blockSize * 8 }}
           >
             <div className="absolute w-full flex flex-col" style={{ top: tracksTop, height: blockSize * 4 }}>
@@ -66,12 +66,12 @@ function SidebarLeft({ blockSize }) {
                     type="text"
                     value={track.title}
                     onChange={(e) => updateTrackTitle(i, e.target.value)}
-                    className="absolute border-2 border-black bg-white px-2 outline-none font-bold text-black text-right"
+                    className="absolute border-[2px] border-black bg-white px-2 outline-none font-bold text-black text-right"
                     style={{ left: blockSize, height: blockSize * 0.7, width: blockSize * 5, fontSize: blockSize * 0.4 }}
                     placeholder={`Track ${i + 1}`}
                   />
                   <div className="absolute flex justify-center items-center" style={{ left: blockSize * 6, width: blockSize, height: blockSize }}>
-                      <div style={{ width: blockSize * 0.7, height: blockSize * 0.7, backgroundColor: track.color || '#aaaaaa' }} className="relative overflow-hidden border-2 border-black cursor-pointer">
+                      <div style={{ width: blockSize * 0.7, height: blockSize * 0.7, backgroundColor: track.color || '#aaaaaa' }} className="relative overflow-hidden border-[2px] border-black cursor-pointer">
                           <input
                             type="color"
                             value={track.color || '#aaaaaa'}
@@ -94,7 +94,7 @@ function SidebarLeft({ blockSize }) {
             animate={{ x: 0 }}
             exit={{ x: -blockSize * 4 }}
             transition={{ duration: 0.3 }}
-            className="absolute left-0 top-0 h-full border-r-2 border-black bg-white pointer-events-auto z-20"
+            className="absolute left-0 top-0 h-full border-r-[2px] border-black bg-white pointer-events-auto z-20"
             style={{ width: blockSize * 4 }}
           >
             <div className="absolute w-full flex flex-col" style={{ top: tracksTop, height: blockSize * 4 }}>
@@ -114,7 +114,7 @@ function SidebarLeft({ blockSize }) {
 }
 
 const CrossedBox = ({ w, h }) => (
-    <div className="w-full h-full bg-white border-2 border-black relative overflow-hidden" style={{ width: w, height: h }}>
+    <div className="w-full h-full bg-white border-[2px] border-black relative overflow-hidden" style={{ width: w, height: h }}>
         <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
             <line x1="0" y1="100%" x2="100%" y2="0" stroke="black" strokeWidth="1.5" />
         </svg>
@@ -271,7 +271,7 @@ const tracksTop = `calc(50% - ${blockSize * 2}px)`;
             animate={{ x: 0 }}
             exit={{ x: blockSize * 8 }}
             transition={{ duration: 0.3 }}
-            className="absolute right-0 top-0 h-full border-l-2 border-black bg-white pointer-events-auto z-10"
+            className="absolute right-0 top-0 h-full border-l-[2px] border-black bg-white pointer-events-auto z-10"
             style={{ width: blockSize * 8 }}
           >
             <div className="absolute w-full flex flex-col" style={{ top: tracksTop, height: blockSize * 4 }}>
@@ -279,7 +279,7 @@ const tracksTop = `calc(50% - ${blockSize * 2}px)`;
                    <button 
                       tabIndex={-1}
                       onClick={handleImport}
-                      className="flex items-center justify-center border-2 font-bold leading-none border-black transition-colors bg-white text-black hover:bg-gray-200"
+                      className="flex items-center justify-center border-[2px] font-bold leading-none border-black transition-colors bg-white text-black hover:bg-gray-200"
                       style={{ width: blockSize * 0.7, height: blockSize * 0.7, padding: blockSize * 0.1 }}
                    >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square">
@@ -303,7 +303,7 @@ const tracksTop = `calc(50% - ${blockSize * 2}px)`;
                                    <button 
                                       tabIndex={-1}
                                       onClick={() => { if (isPlusActive) { clearDraftEvent(); selectEvent(null); } else { setAddingToTrack(rowIndex); selectEvent(null); } }}
-                                      className={`flex items-center justify-center border-2 font-bold font-sans leading-none border-black transition-colors ${isPlusActive ? 'bg-black text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-200'}`}
+                                      className={`flex items-center justify-center border-[2px] font-bold font-sans leading-none border-black transition-colors ${isPlusActive ? 'bg-black text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-200'}`}
                                       style={{ width: blockSize * 0.7, height: blockSize * 0.7, fontSize: blockSize * 0.6 }}
                                    >
                                       {isPlusActive ? '×' : '+'}
@@ -315,7 +315,7 @@ const tracksTop = `calc(50% - ${blockSize * 2}px)`;
                            {rowIndex === 0 && (
                                <div className="absolute flex items-center" style={{ left: blockSize * 2, width: blockSize * 5, height: blockSize }}>
                                    {isInputsAvailable ? (
-                                       <input type="text" tabIndex={1} placeholder="Name" className={`w-full border-2 px-2 font-sans text-black outline-none bg-white ${nameError ? 'border-red-500' : 'border-black'}`} style={{ height: blockSize * 0.7, fontSize: blockSize * 0.4 }} value={draftEvent.name} onChange={e => updateDraftEvent({name: e.target.value})} onKeyDown={handleKeyDown} />
+                                       <input type="text" tabIndex={1} placeholder="Name" className={`w-full border-[2px] px-2 font-sans text-black outline-none bg-white ${nameError ? 'border-red-500' : 'border-black'}`} style={{ height: blockSize * 0.7, fontSize: blockSize * 0.4 }} value={draftEvent.name} onChange={e => updateDraftEvent({name: e.target.value})} onKeyDown={handleKeyDown} />
                                    ) : (
                                        <CrossedBox w="100%" h={blockSize * 0.7} />
                                    )}
@@ -325,7 +325,7 @@ const tracksTop = `calc(50% - ${blockSize * 2}px)`;
                            {rowIndex === 1 && (
                                <div className="absolute flex items-center" style={{ left: blockSize * 2, width: blockSize * 5, height: blockSize }}>
                                    {isInputsAvailable ? (
-                                       <input type="text" tabIndex={2} placeholder="Description" className="w-full border-2 border-black px-2 font-sans outline-none bg-white text-black" style={{ height: blockSize * 0.7, fontSize: blockSize * 0.4 }} value={draftEvent.desc} onChange={e => updateDraftEvent({desc: e.target.value})} onKeyDown={handleKeyDown} />
+                                       <input type="text" tabIndex={2} placeholder="Description" className="w-full border-[2px] border-black px-2 font-sans outline-none bg-white text-black" style={{ height: blockSize * 0.7, fontSize: blockSize * 0.4 }} value={draftEvent.desc} onChange={e => updateDraftEvent({desc: e.target.value})} onKeyDown={handleKeyDown} />
                                    ) : (
                                        <CrossedBox w="100%" h={blockSize * 0.7} />
                                    )}
@@ -335,7 +335,7 @@ const tracksTop = `calc(50% - ${blockSize * 2}px)`;
                            {rowIndex === 2 && (
                                <div className="absolute flex items-center" style={{ left: blockSize * 2, width: blockSize * 5, height: blockSize }}>
                                    {isInputsAvailable ? (
-                                       <input type="text" tabIndex={3} placeholder="YYMMDDYYMMDD" className={`w-full border-2 px-2 outline-none bg-white text-black ${draftEvent.dateStr ? 'font-mono' : 'font-sans'} ${dateError ? 'border-red-500' : 'border-black'}`} style={{ height: blockSize * 0.7, fontSize: blockSize * 0.4 }} value={draftEvent.dateStr} onChange={e => updateDraftEvent({dateStr: e.target.value.replace(/\D/g, '')})} onKeyDown={handleKeyDown} maxLength={12} />
+                                       <input type="text" tabIndex={3} placeholder="YYMMDDYYMMDD" className={`w-full border-[2px] px-2 outline-none bg-white text-black ${draftEvent.dateStr ? 'font-mono' : 'font-sans'} ${dateError ? 'border-red-500' : 'border-black'}`} style={{ height: blockSize * 0.7, fontSize: blockSize * 0.4 }} value={draftEvent.dateStr} onChange={e => updateDraftEvent({dateStr: e.target.value.replace(/\D/g, '')})} onKeyDown={handleKeyDown} maxLength={12} />
                                    ) : (
                                        <CrossedBox w="100%" h={blockSize * 0.7} />
                                    )}
@@ -345,7 +345,7 @@ const tracksTop = `calc(50% - ${blockSize * 2}px)`;
                            {rowIndex === 3 && (
                                <div className="absolute flex items-center" style={{ left: blockSize * 2, width: blockSize * 5, height: blockSize }}>
                                    {isInputsAvailable ? (
-                                       <input type="text" tabIndex={4} placeholder="Link" className="w-full border-2 border-black px-2 font-sans outline-none bg-white text-black" style={{ height: blockSize * 0.7, fontSize: blockSize * 0.4 }} value={draftEvent.link} onChange={e => updateDraftEvent({link: e.target.value})} onKeyDown={handleKeyDown} />
+                                       <input type="text" tabIndex={4} placeholder="Link" className="w-full border-[2px] border-black px-2 font-sans outline-none bg-white text-black" style={{ height: blockSize * 0.7, fontSize: blockSize * 0.4 }} value={draftEvent.link} onChange={e => updateDraftEvent({link: e.target.value})} onKeyDown={handleKeyDown} />
                                    ) : (
                                        <CrossedBox w="100%" h={blockSize * 0.7} />
                                    )}
@@ -358,7 +358,7 @@ const tracksTop = `calc(50% - ${blockSize * 2}px)`;
                    <button 
                       tabIndex={-1}
                       onClick={handleExport}
-                      className="flex items-center justify-center border-2 font-bold leading-none border-black transition-colors bg-white text-black hover:bg-gray-200"
+                      className="flex items-center justify-center border-[2px] font-bold leading-none border-black transition-colors bg-white text-black hover:bg-gray-200"
                       style={{ width: blockSize * 0.7, height: blockSize * 0.7, padding: blockSize * 0.1 }}
                    >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square">
@@ -380,7 +380,7 @@ const tracksTop = `calc(50% - ${blockSize * 2}px)`;
             animate={{ x: 0 }}
             exit={{ x: blockSize * 4 }}
             transition={{ duration: 0.3 }}
-            className="absolute right-0 top-0 h-full border-l-2 border-black bg-white pointer-events-auto z-20"
+            className="absolute right-0 top-0 h-full border-l-[2px] border-black bg-white pointer-events-auto z-20"
             style={{ width: blockSize * 4 }}
           >
              <div className="absolute w-full flex flex-col" style={{ top: tracksTop, height: blockSize * 4 }}>
@@ -832,7 +832,7 @@ function CenterCanvas({ blockSize }) {
 
                                  {/* Dashed bottom for weekends, anchored on Saturday smoothly spanning 2 blocks */}
                                  {day.getDay() === 6 && (
-                                     <div className="absolute bottom-0 left-0 border-b-2 border-dashed border-black h-[2px] z-10" style={{ width: blockSize * 2 }} />
+                                     <div className="absolute bottom-0 left-0 border-b-[2px] border-dashed border-black h-[2px] z-10" style={{ width: blockSize * 2 }} />
                                  )}
 
                                  {(isFirst || isMarker) && (
@@ -891,8 +891,8 @@ function CenterCanvas({ blockSize }) {
                 const hasLink = !!event.link;
                 let borderClass = '';
                 
-                if (isSelected) borderClass = 'border-2 border-black';
-                else if (hasLink && ctrlPressed) borderClass = 'border-2 border-blue-500';
+                if (isSelected) borderClass = 'border-[2px] border-black';
+                else if (hasLink && ctrlPressed) borderClass = 'border-[2px] border-blue-500';
 
                 const bgOpacityClass = hasMarkOnIt ? 'opacity-40 group-hover:opacity-70' : 'opacity-80 group-hover:opacity-100';
                 const zIndexVal = (isSelected || (hasLink && ctrlPressed)) ? 15 : 10;
