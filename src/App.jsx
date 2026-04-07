@@ -13,7 +13,8 @@ export default function App() {
     const observer = new ResizeObserver(entries => {
       for (let entry of entries) {
         const { width } = entry.contentRect;
-        setBlockSize(width / 32);
+        // Snap to nearest integer to avoid subpixel antialiasing making borders look blurry/thin
+        setBlockSize(Math.floor(width / 32));
       }
     });
     observer.observe(containerRef.current);
