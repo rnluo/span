@@ -26,7 +26,8 @@ const useStore = create(
       updateTrackColor: (index, color) => set((state) => {
         const newTracks = [...state.tracks];
         newTracks[index].color = color;
-        return { tracks: newTracks };
+        const newEvents = state.events.map(e => e.trackIndex === index ? { ...e, color } : e);
+        return { tracks: newTracks, events: newEvents };
       }),
 
       events: [],
@@ -60,6 +61,7 @@ const useStore = create(
       draftEvent: { name: '', desc: '', dateStr: '', link: '' },
       updateDraftEvent: (data) => set((state) => ({ draftEvent: { ...state.draftEvent, ...data } })),
       clearDraftEvent: () => set({ draftEvent: { name: '', desc: '', dateStr: '', link: '' }, addingToTrack: null }),
+      importData: (data) => set({ tracks: data.tracks, events: data.events }),
     }), {
       partialize: (state) => ({
         events: state.events

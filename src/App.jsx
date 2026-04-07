@@ -135,9 +135,44 @@ function SidebarRight({ blockSize }) {
   const selectedEventId = useStore(s => s.selectedEventId);
   const selectEvent = useStore(s => s.selectEvent);
   const clearDraftEvent = useStore(s => s.clearDraftEvent);
+  const importData = useStore(s => s.importData);
 
   const [dateError, setDateError] = useState(false);
   const [nameError, setNameError] = useState(false);
+
+  const handleImport = () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (evt) => {
+              try {
+                  const data = JSON.parse(evt.target.result);
+                  if (data.tracks && data.events) {
+                      importData(data);
+                  }
+              } catch (err) {
+                  console.error('Failed to import JSON', err);
+              }
+          };
+          reader.readAsText(file);
+      };
+      input.click();
+  };
+
+  const handleExport = () => {
+      const data = { tracks, events };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `span-export-${format(new Date(), 'yyyy-MM-dd')}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+  };
 
   useEffect(() => {
       if (selectedEventId) {
@@ -239,6 +274,20 @@ const tracksTop = `calc(50% - ${blockSize * 2}px)`;
             style={{ width: blockSize * 8 }}
           >
             <div className="absolute w-full flex flex-col" style={{ top: tracksTop, height: blockSize * 4 }}>
+                <div className="absolute flex justify-center items-center" style={{ left: blockSize, top: -blockSize, width: blockSize, height: blockSize }}>
+                   <button 
+                      tabIndex={-1}
+                      onClick={handleImport}
+                      className="flex items-center justify-center border-2 font-bold leading-none border-black transition-colors bg-white text-black hover:bg-gray-200"
+                      style={{ width: blockSize * 0.7, height: blockSize * 0.7, padding: blockSize * 0.1 }}
+                   >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="7 10 12 15 17 10" />
+                          <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                   </button>
+               </div>
                {[0, 1, 2, 3].map(rowIndex => {
                    const isPlusCrossed = isInputsAvailable && addingToTrack !== rowIndex;
                    const isPlusActive = addingToTrack === rowIndex;
@@ -304,6 +353,20 @@ const tracksTop = `calc(50% - ${blockSize * 2}px)`;
                        </div>
                    )
                })}
+               <div className="absolute flex justify-center items-center" style={{ left: blockSize, top: blockSize * 4, width: blockSize, height: blockSize }}>
+                   <button 
+                      tabIndex={-1}
+                      onClick={handleExport}
+                      className="flex items-center justify-center border-2 font-bold leading-none border-black transition-colors bg-white text-black hover:bg-gray-200"
+                      style={{ width: blockSize * 0.7, height: blockSize * 0.7, padding: blockSize * 0.1 }}
+                   >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="17 8 12 3 7 8" />
+                          <line x1="12" y1="3" x2="12" y2="15" />
+                      </svg>
+                   </button>
+               </div>
             </div>
           </motion.div>
         )}
@@ -325,19 +388,17 @@ const tracksTop = `calc(50% - ${blockSize * 2}px)`;
                 const now = presentDate.getTime();
                 
                 let displayDateStr = '--/--/--';
-                const inProgress = trackEvents.filter(e => {
+                const futurePoints = [];
+                trackEvents.forEach(e => {
                    const s = new Date(e.start).getTime();
-                   const n = addDays(new Date(e.end), 1).getTime();
-                   return s <= now && n >= now;
-                }).sort((a,b) => new Date(a.end).getTime() - new Date(b.end).getTime());
+                   const n = new Date(e.end).getTime();
+                   if (s > now) futurePoints.push(s);
+                   if (n > now) futurePoints.push(n);
+                });
+                futurePoints.sort((a,b) => a - b);
 
-                if (inProgress.length > 0) {
-                    displayDateStr = format(new Date(inProgress[0].end), 'yy/MM/dd');
-                } else {
-                    const future = trackEvents.filter(e => new Date(e.start).getTime() > now);
-                    if(future.length > 0) {
-                        displayDateStr = format(new Date(future[0].start), 'yy/MM/dd');
-                    }
+                if (futurePoints.length > 0) {
+                    displayDateStr = format(new Date(futurePoints[0]), 'yy/MM/dd');
                 }
 
                 return (
@@ -560,16 +621,21 @@ function CenterCanvas({ blockSize }) {
   const activeEvent = eventDrag ? events.find(e => e.id === eventDrag.id) : selectedEvent;
 
   const [infoWidth, setInfoWidth] = useState(0);
-  const infoRef = useRef(null);
+  const [infoNode, setInfoNode] = useState(null);
 
   useEffect(() => {
-      if (infoRef.current) {
-          setInfoWidth(infoRef.current.getBoundingClientRect().width);
+      if (infoNode) {
+          const observer = new ResizeObserver(() => {
+              setInfoWidth(infoNode.getBoundingClientRect().width);
+          });
+          observer.observe(infoNode);
+          return () => observer.disconnect();
       }
-  }, [selectedEventId, mode, eventDrag?.tmpStart, eventDrag?.tmpEnd]); // Recalculate width on mount/change
+  }, [infoNode, mode, eventDrag?.tmpStart, eventDrag?.tmpEnd]); 
 
   let infoLeft = 0;
   let infoTop = '0px';
+  let infoMaxWidth = '100vw';
   let isDraggingActiveEvent = false;
 
   if (activeEvent) {
@@ -583,12 +649,111 @@ function CenterCanvas({ blockSize }) {
       const leftSidebarEdge = (mode === 'edit' ? 8 : 4) * blockSize;
       const rightSidebarEdge = 32 * blockSize - ((mode === 'edit' ? 8 : 4) * blockSize);
       
+      infoMaxWidth = `${rightSidebarEdge - leftSidebarEdge - (blockSize * 2)}px`;
+
       const leftBound = leftSidebarEdge + blockSize;
       const rightBound = rightSidebarEdge - blockSize - infoWidth;
 
       infoLeft = Math.max(leftBound, Math.min(desiredLeft, rightBound > leftBound ? rightBound : leftBound));
       infoTop = activeEvent.trackIndex < 2 ? `calc(25% - ${blockSize * 1.5}px)` : `calc(75% + ${blockSize * 1.5}px)`;
   }
+
+  const marksByDate = {};
+  events.forEach(e => {
+      (e.markedDates || []).forEach(d => {
+          if (!marksByDate[d]) marksByDate[d] = [];
+          marksByDate[d].push({ trackIndex: e.trackIndex });
+      });
+  });
+
+  const renderMarks = () => {
+        const renderedBlocks = [];
+        let keyCounter = 0;
+
+        Object.entries(marksByDate).forEach(([dateStr, marks]) => {
+            marks.sort((a, b) => a.trackIndex - b.trackIndex);
+            
+            let segments = [];
+            if (marks.length === 0) return;
+            let currentSegment = [marks[0]];
+            for (let i = 1; i < marks.length; i++) {
+                const prevTrack = currentSegment[currentSegment.length - 1].trackIndex;
+                const currTrack = marks[i].trackIndex;
+                
+                let canConnect = true;
+                for (let t = prevTrack + 1; t < currTrack; t++) {
+                    const hasEvent = events.some(e => e.trackIndex === t && e.start <= dateStr && e.end >= dateStr);
+                    if (hasEvent) {
+                        canConnect = false;
+                        break;
+                    }
+                }
+
+                if (canConnect) {
+                    currentSegment.push(marks[i]);
+                } else {
+                    segments.push(currentSegment);
+                    currentSegment = [marks[i]];
+                }
+            }
+            segments.push(currentSegment);
+
+            const pxLeft = timeToPx(parseLocalDate(dateStr));
+            const centerPx = pxLeft + blockSize / 2;
+            const triHeight = 0.15 * blockSize; // exact altitude of 0.15 * blockSize
+            const triWidth = (triHeight * 2) / Math.sqrt(3); // base of equilateral triangle
+
+            segments.forEach(segment => {
+                const startTrack = segment[0].trackIndex;
+                const endTrack = segment[segment.length - 1].trackIndex;
+                
+                const lineTop = (startTrack + 1) * blockSize + 0.15 * blockSize;
+                const lineBottom = (endTrack + 1) * blockSize + 0.85 * blockSize;
+
+                renderedBlocks.push(
+                    <div key={`mark-${keyCounter++}`} className="absolute top-0 pointer-events-none z-20">
+                        {/* Top Triangle */}
+                        <svg 
+                            style={{ position: 'absolute', left: centerPx - triWidth / 2, top: lineTop - triHeight, width: triWidth, height: triHeight, overflow: 'visible' }}
+                        >
+                            <polygon 
+                                points={`0,0 ${triWidth},0 ${triWidth/2},${triHeight}`} 
+                                fill="none" 
+                                stroke="black" 
+                                strokeWidth="2" 
+                                strokeLinejoin="miter"
+                            />
+                        </svg>
+                        
+                        {/* Connecting Line */}
+                        <div style={{
+                            position: 'absolute',
+                            left: centerPx - 1,
+                            top: lineTop,
+                            width: 2,
+                            height: lineBottom - lineTop,
+                            backgroundColor: 'black'
+                        }} />
+
+                        {/* Bottom Triangle */}
+                        <svg 
+                            style={{ position: 'absolute', left: centerPx - triWidth / 2, top: lineBottom, width: triWidth, height: triHeight, overflow: 'visible' }}
+                        >
+                            <polygon 
+                                points={`${triWidth/2},0 ${triWidth},${triHeight} 0,${triHeight}`} 
+                                fill="none" 
+                                stroke="black" 
+                                strokeWidth="2" 
+                                strokeLinejoin="miter"
+                            />
+                        </svg>
+                    </div>
+                );
+            });
+        });
+
+        return renderedBlocks;
+  };
 
   return (
     <div
@@ -601,6 +766,18 @@ function CenterCanvas({ blockSize }) {
         onDoubleClick={() => setScrollOffset(0)}
         className={`absolute left-0 top-0 w-full h-full bg-white overflow-hidden z-10 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
     >
+        {/* Background Image */}
+        <div 
+            className="absolute inset-0 pointer-events-none z-0" 
+            style={{ 
+                backgroundImage: 'url(/alpine.jpg)', 
+                backgroundSize: 'cover', 
+                backgroundPosition: 'center', 
+                opacity: 0.5, 
+                transform: 'scale(1)' 
+            }} 
+        />
+
         {/* Present Day Line dynamically locked to center of today's block */}
         <div
             className="absolute top-0 w-px bg-red-500 z-0 pointer-events-none"
@@ -609,7 +786,6 @@ function CenterCanvas({ blockSize }) {
 
         <div className="absolute w-full z-10 bg-white" style={{ top: tapeTop, height: blockSize * 6 }}>
              <div className="absolute inset-0 pointer-events-none z-0">
-                 <div className="absolute top-0 w-full h-[2px] bg-black z-10" />
                  <div className="absolute w-full h-px bg-gray-200/50" style={{top: blockSize * 1}} />
                  <div className="absolute w-full h-px bg-gray-200/50" style={{top: blockSize * 2}} />
                  <div className="absolute w-full h-px bg-gray-200/50" style={{top: blockSize * 3}} />
@@ -643,6 +819,11 @@ function CenterCanvas({ blockSize }) {
                                      <div className="absolute left-0 top-0 h-full w-px bg-gray-200" />
                                  )}
 
+                                 {/* Solid top for weekdays/weekends without markers */}
+                                 {!(isFirst || isMarker) && (
+                                     <div className="absolute top-0 left-0 w-full bg-black h-[2px] z-10" />
+                                 )}
+
                                  {/* Solid bottom for weekdays */}
                                  {!isWeekend && (
                                      <div className="absolute bottom-0 left-0 w-full bg-black h-[2px] z-10" />
@@ -654,7 +835,7 @@ function CenterCanvas({ blockSize }) {
                                  )}
 
                                  {(isFirst || isMarker) && (
-                                     <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white leading-none px-1 tracking-tight z-20">
+                                     <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 leading-none px-1 tracking-tight z-20 select-none">
                                            <span className={`text-black ${isFirst ? 'font-bold font-sans' : 'font-normal font-mono'}`} style={{ fontSize: blockSize * 0.4 }}>
                                              {isFirst ? format(day, 'MMM') : day.getDate()}
                                          </span>
@@ -694,10 +875,26 @@ function CenterCanvas({ blockSize }) {
                 const finalWidthRaw = widthRaw - draggingLeftOffset + draggingRightOffset;
                 const rectWidth = finalWidthRaw - (blockSize * 0.30); // Pads 0.15 on both ends
                 
+                let hasMarkOnIt = false;
+                let currDate = parseLocalDate(event.start);
+                const endDate = parseLocalDate(event.end);
+                while (currDate <= endDate) {
+                    const dStr = format(currDate, 'yyyy-MM-dd');
+                    if (marksByDate[dStr] && marksByDate[dStr].some(m => m.trackIndex === event.trackIndex)) {
+                        hasMarkOnIt = true;
+                        break;
+                    }
+                    currDate = addDays(currDate, 1);
+                }
+
                 const hasLink = !!event.link;
-                let borderClass = 'opacity-60 hover:opacity-100';
-                if (isSelected) borderClass = 'border-2 border-black opacity-100';
-                else if (hasLink && ctrlPressed) borderClass = 'border-2 border-blue-500 opacity-100';
+                let borderClass = '';
+                
+                if (isSelected) borderClass = 'border-2 border-black';
+                else if (hasLink && ctrlPressed) borderClass = 'border-2 border-blue-500';
+
+                const bgOpacityClass = hasMarkOnIt ? 'opacity-40 group-hover:opacity-70' : 'opacity-80 group-hover:opacity-100';
+                const zIndexVal = (isSelected || (hasLink && ctrlPressed)) ? 15 : 10;
 
                 return (
                     <div
@@ -706,8 +903,45 @@ function CenterCanvas({ blockSize }) {
                         onClick={(e) => { 
                             e.stopPropagation(); 
                             if (wasEventDragged.current) return;
-                            if (ctrlPressed && hasLink) {
-                                window.open(event.link, '_blank');
+
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const offsetX = e.clientX - rect.left;
+                            const dayOffset = Math.floor((offsetX + 0.15 * blockSize) / blockSize);
+                            const clickedDate = format(addDays(parseLocalDate(event.start), dayOffset), 'yyyy-MM-dd');
+
+                            const overlappingEvents = events.filter(ev => {
+                                if (ev.trackIndex !== event.trackIndex) return false;
+                                return ev.start <= clickedDate && ev.end >= clickedDate;
+                            }).sort((a, b) => {
+                                const startDiff = parseLocalDate(a.start).getTime() - parseLocalDate(b.start).getTime();
+                                return startDiff !== 0 ? startDiff : a.id.localeCompare(b.id);
+                            });
+
+                            if (e.shiftKey) {
+                                const newMarkedDates = event.markedDates?.includes(clickedDate) 
+                                    ? event.markedDates.filter(d => d !== clickedDate) 
+                                    : [...(event.markedDates || []), clickedDate];
+                                updateEvent(event.id, { markedDates: newMarkedDates });
+                                return;
+                            }
+                            if (ctrlPressed) {
+                                const linkedEvents = overlappingEvents.filter(ev => ev.link);
+                                if (linkedEvents.length > 0) {
+                                    linkedEvents.forEach(ev => window.open(ev.link, '_blank'));
+                                } else if (hasLink) {
+                                    window.open(event.link, '_blank');
+                                }
+                                return;
+                            }
+                            
+                            if (overlappingEvents.length > 1) {
+                                const currentIndex = overlappingEvents.findIndex(ev => ev.id === selectedEventId);
+                                if (currentIndex === -1) {
+                                    selectEvent(overlappingEvents[0].id);
+                                } else {
+                                    const nextIndex = (currentIndex + 1) % overlappingEvents.length;
+                                    selectEvent(overlappingEvents[nextIndex].id);
+                                }
                             } else {
                                 selectEvent(isSelected ? null : event.id); 
                             }
@@ -736,29 +970,36 @@ function CenterCanvas({ blockSize }) {
                                 tmpEnd: event.end
                             });
                         }}
-                        className={`absolute text-white font-bold tracking-wide flex items-center px-2 overflow-hidden font-sans hover:brightness-110 cursor-pointer z-10 ${borderClass}`}
+                        className={`absolute text-white font-bold tracking-wide flex items-center px-2 overflow-hidden font-sans cursor-pointer group ${borderClass}`}
                         style={{
                             left: finalLeft,
                             width: Math.max(rectWidth, blockSize * 0.1),
                             top: ((event.trackIndex + 1) * blockSize) + blockSize * 0.15,
                             height: blockSize * 0.7,
-                            backgroundColor: event.color || '#000000',
-                            fontSize: blockSize * 0.35
+                            fontSize: blockSize * 0.35,
+                            zIndex: zIndexVal
                         }}
                     >
+                        <div 
+                            className={`absolute inset-0 transition-opacity -z-10 group-hover:brightness-110 pointer-events-none ${bgOpacityClass}`} 
+                            style={{ backgroundColor: event.color || '#000000' }} 
+                        />
                         {isSelected && (
                             <>
-                                <div className="absolute left-0 top-0 w-3 h-full cursor-ew-resize" />
-                                <div className="absolute right-0 top-0 w-3 h-full cursor-ew-resize" />
+                                <div className="absolute left-0 top-0 w-3 h-full cursor-ew-resize z-20" />
+                                <div className="absolute right-0 top-0 w-3 h-full cursor-ew-resize z-20" />
                             </>
                         )}
                     </div>
                 )
              })}
+
+             {/* Visit Marks */}
+             {renderMarks()}
         </div>
 
         {/* Selected Event Details Rendered directly on background */}
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
             {(selectedEvent || eventDrag) && (() => {
                 const activeEv = selectedEvent || events.find(e => e.id === eventDrag.id);
                 if (!activeEv) return null;
@@ -767,13 +1008,14 @@ function CenterCanvas({ blockSize }) {
                 
                 return (
                     <motion.div
-                        ref={infoRef}
+                        key={activeEv.id}
+                        ref={setInfoNode}
                         initial={{ opacity: 0, left: infoLeft, top: infoTop }}
                         animate={{ opacity: 1, left: infoLeft, top: infoTop }}
                         exit={{ opacity: 0 }}
-                        transition={{ opacity: { duration: 0.3 }, left: { duration: (isAnimatingMode || (!isDraggingActiveEvent && !isDragging)) ? 0.3 : 0 }, top: { duration: isAnimatingMode ? 0.3 : 0 } }}
-                        className="absolute text-black pointer-events-none z-30 font-sans flex flex-col justify-center bg-white px-2 py-1 whitespace-nowrap"
-                        style={{ transform: 'translateY(-50%)' }}
+                        transition={{ opacity: { duration: 0.3 }, left: { duration: isAnimatingMode ? 0.3 : 0 }, top: { duration: isAnimatingMode ? 0.3 : 0 } }}
+                        className="absolute text-black pointer-events-none z-30 font-sans flex flex-col justify-center px-2 py-1 break-words whitespace-pre-wrap select-none"
+                        style={{ transform: 'translateY(-50%)', maxWidth: infoMaxWidth }}
                     >
                         <div className="font-bold mb-1" style={{ fontSize: blockSize * 0.4 }}>{activeEv.name}</div>
                         <div className="text-black mb-1" style={{ fontSize: blockSize * 0.4 }}>{activeEv.desc}</div>
